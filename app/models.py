@@ -3,6 +3,7 @@ import sqlalchemy.orm as so
 from app import db
 from typing import Optional
 from datetime import datetime, timezone
+from werkzeug.security import generate_password_hash, check_password_hash
 
 #class for initial database structure (or schema) or means class for initial table
 class User(db.Model):
@@ -16,8 +17,14 @@ class User(db.Model):
     
     posts: so.WriteOnlyMapped['Post'] = so.relationship(back_populates='author')
     
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
     def __repr__(self) -> str:
-        return f'<User {self.username}>'
+        return f'User: {self.username}'
 
 class Post(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
@@ -28,4 +35,4 @@ class Post(db.Model):
     author:so.Mapped[User] = so.relationship(back_populates='posts')
     
     def __repr__(self) -> str:
-        return f'<Post {self.body}>'
+        return f'Post: {self.body}'
