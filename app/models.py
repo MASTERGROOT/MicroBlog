@@ -1,12 +1,17 @@
 ﻿import sqlalchemy as sa
 import sqlalchemy.orm as so
-from app import db
+from app import db, login
 from typing import Optional
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+
+@login.user_loader
+def load_user(id):
+    return db.session.get(User, int(id))
 
 #class for initial database structure (or schema) or means class for initial table
-class User(db.Model):
+class User(db.Model, UserMixin):
     #if you want to change table name 
     #__tablename__ = "table_name_you_ want"
     
