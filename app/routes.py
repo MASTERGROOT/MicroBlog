@@ -1,4 +1,4 @@
-﻿from app import app, db
+﻿from app import app, db, errors
 from flask import render_template, flash, redirect, url_for, request
 from urllib.parse import urlsplit
 from app.form import LoginForm, Registration, EditProfileForm
@@ -81,7 +81,7 @@ def before_request():
 @app.route('/edit_profile', methods=['GET','POST'])
 @login_required
 def edit_profile():
-    edit_form = EditProfileForm()
+    edit_form = EditProfileForm(current_user.username)
     if edit_form.validate_on_submit():
         current_user.username = edit_form.username.data
         current_user.about_me = edit_form.about_me.data
