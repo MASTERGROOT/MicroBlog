@@ -1,0 +1,23 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+    <h1></h1>
+    <form action="" method="post">
+        {{edit_form.hidden_tag()}}
+        <p>
+            {{ edit_form.username.label }}<br>
+            {{ edit_form.username(size=32) }}<br>
+            {% for error in edit_form.username.errors %}
+            <span style="color: red;">[{{error}}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ edit_form.about_me.label }}<br>
+            {{ edit_form.about_me(cols=50, rows=4) }}<br>
+            {% for error in edit_form.about_me.errors %}
+            <span style="color: red;">[{{error}}]</span>
+            {% endfor %}
+        </p>
+        <p>{{edit_form.submit()}}</p>
+    </form>
+{% endblock  %}
