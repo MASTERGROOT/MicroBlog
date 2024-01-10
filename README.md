@@ -1,10 +1,10 @@
 ## Micro Blog using Flask
 ---
 >[!NOTE]
->I am NOOB
+>Hello this is my project for learning
 
 >[!IMPORTANT]
->Installing Flask
+>Learn how to use flask
 ```
 $ pip install Flask
 ```
