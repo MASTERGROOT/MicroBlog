@@ -11,6 +11,11 @@ from hashlib import md5
 def load_user(id):
     return db.session.get(User, int(id))
 
+#this is an auxiliary table that has no data other than the foreign keys, I created it without an associated model class.
+followers = sa.Table("followers", db.metadata,
+                    sa.Column('follower_id',sa.Integer, sa.ForeignKey('user.id'), primary_key=True),
+                    sa.Column('followed_id', sa.Integer, sa.ForeignKey('user.id'), primary_key=True))
+
 #class for initial database structure (or schema) or means class for initial table
 class User(db.Model, UserMixin):
     #if you want to change table name 
@@ -23,6 +28,15 @@ class User(db.Model, UserMixin):
     about_me: so.Mapped[Optional[str]] = so.mapped_column(sa.String(140))
     last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(default=lambda: datetime.now(timezone.utc))
     
+    following: so.WriteOnlyMapped['User'] = so.relationship(
+        secondary=followers, primaryjoin=(followers.c.follower_id == id),
+        secondaryjoin=(followers.c.followed_id == id),
+        back_populates='followers')
+    followers: so.WriteOnlyMapped['User'] = so.relationship(
+        secondary=followers, primaryjoin=(followers.c.followed_id == id),
+        secondaryjoin=(followers.c.follower_id == id),
+        back_populates='following')
+    
     posts: so.WriteOnlyMapped['Post'] = so.relationship(back_populates='author')
     
     def set_password(self, password):
@@ -34,6 +48,49 @@ class User(db.Model, UserMixin):
     def avatar(self, size):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
+    
+    def follow(self, user):
+        if not self.is_following(user):
+            self.following.add(user)
+
+    def unfollow(self, user):
+        if self.is_following(user):
+            self.following.remove(user)
+
+    def is_following(self, user):
+        query = self.following.select().where(User.id == user.id)
+        return db.session.scalar(query) is not None
+
+    def followers_count(self):
+        query = sa.select(sa.func.count()).select_from(
+            self.followers.select().subquery())
+        return db.session.scalar(query)
+
+    #SQL: SELECT COUNT(*) FROM (SELECT * FROM folloing)
+    def following_count(self):
+        query = sa.select(sa.func.count()).select_from(self.following.select().subquery())
+        return db.session.scalar(query)
+    
+    #SELECT Post.*
+    # FROM Post
+    # JOIN User AS Author ON Post.user_id = Author.id
+    # LEFT OUTER JOIN User As Follower ON Author.id = Follower.followed_id
+    # WHERE Follower.id = id OR Author.id = id
+    # ORDER BY Post.timestamp DESC;
+    def following_posts(self):
+        Author = so.aliased(User)
+        Follower = so.aliased(User)
+        return (
+            sa.select(Post)
+            .join(Post.author.of_type(Author))
+            .join(Author.followers.of_type(Follower), isouter=True)
+            .where(sa.or_(
+                Follower.id == self.id,
+                Author.id == self.id
+            ))
+            .group_by(Post)
+            .order_by(Post.timestamp.desc())
+        )
     
     def __repr__(self) -> str:
         return f'User: {self.username}'
