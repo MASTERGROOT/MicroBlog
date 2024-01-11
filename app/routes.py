@@ -1,28 +1,34 @@
 ﻿from app import app, db, errors
 from flask import render_template, flash, redirect, url_for, request
 from urllib.parse import urlsplit
-from app.form import LoginForm, Registration, EditProfileForm, EmptyForm
+from app.form import LoginForm, Registration, EditProfileForm, EmptyForm, PostForm
 from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
-from app.models import User
+from app.models import User, Post
 from datetime import datetime, timezone
 
-@app.route("/")
-@app.route('/index')
+@app.route("/", methods=["GET", "POST"])
+@app.route('/index', methods=["GET", "POST"])
 @login_required
 def index():
-    user = {'username': 'Goody'}
-    posts = [
-        {
-            'author': {'username': 'Fernando'},
-            'body': "I love car!"
-        },
-        {
-            'author': {'username': 'Nate'},
-            'body': "Busch Garden For every!!!"
-        }
-    ]
-    return render_template('index.html', title="Home Page", posts=posts)
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body= form.post.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash("Post succeeded")
+        return redirect(url_for('index'))
+    page = request.args.get('page', 1, type=int)
+    posts = db.paginate(current_user.following_posts(), page=page, per_page=app.config['POST_PER_PAGE'], error_out=False).items
+    return render_template('index.html', title="Home Page", posts=posts, form=form)
+
+@app.route("/explore")
+@login_required
+def explore():
+    page = request.args.get('page', 1, type=int)
+    query = sa.select(Post).order_by(Post.timestamp.desc())
+    posts = db.paginate(query, page=page, per_page=app.config['POST_PER_PAGE'], error_out=False).items
+    return render_template('index.html', title="Explore", posts=posts)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
