@@ -1,6 +1,6 @@
 ﻿import sqlalchemy as sa
 import sqlalchemy.orm as so
-from app import app, db, errors
+from app import app, db, errors, cli
 from app.models import User, Post
 
 #for flask shell
