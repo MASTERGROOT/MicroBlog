@@ -1,13 +1,15 @@
 ﻿from app import app, db, errors
+from app.models import User, Post
+from app.email import send_password_reset_email
+from app.form import LoginForm, Registration, EditProfileForm, EmptyForm, PostForm, ResetPasswordRequestForm, ResetPasswordForm
+from app.translate import translate
 from flask import render_template, flash, redirect, url_for, request, g
 from flask_babel import _, get_locale
 from urllib.parse import urlsplit
-from app.form import LoginForm, Registration, EditProfileForm, EmptyForm, PostForm, ResetPasswordRequestForm, ResetPasswordForm
 from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
-from app.models import User, Post
-from app.email import send_password_reset_email
 from datetime import datetime, timezone
+from langdetect import LangDetectException, detect
 
 @app.before_request
 def before_request():
@@ -22,7 +24,11 @@ def before_request():
 def index():
     form = PostForm()
     if form.validate_on_submit():
-        post = Post(body= form.post.data, author=current_user)
+        try:
+            lang = detect(form.post.data)
+        except LangDetectException:
+            lang = ''
+        post = Post(body= form.post.data, author=current_user, language=lang)
         db.session.add(post)
         db.session.commit()
         flash(_("Post succeeded"))
@@ -34,6 +40,14 @@ def index():
     prev_url = url_for('index', page=posts.prev_num) \
         if posts.has_prev else None
     return render_template('index.html', title=_("Home Page"), posts=posts.items, form=form, next_url=next_url, prev_url=prev_url)
+
+@app.route('/translate', methods=['POST'])
+@login_required
+def translate_text():
+    data = request.get_json()
+    return {'text': translate(data['text'],
+                              data['source_language'],
+                              data['dest_language'])}
 
 @app.route("/explore")
 @login_required
@@ -122,14 +136,14 @@ def follow(username):
     if form.validate_on_submit():
         user = db.session.scalar(sa.select(User).where(User.username == username))
         if user is None:
-            flash(_('User %(username) not found.', username = username))
+            flash(_('User %(username)s not found.', username = username))
             return redirect(url_for('index'))
         if user == current_user:
             flash(_('You cannot follow yourself!'))
             return redirect(url_for('user', username=username))
         current_user.follow(user)
         db.session.commit()
-        flash(_("You are now following %(username)!!!", username = username))
+        flash(_("You are now following %(username)s!!!", username = username))
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))
@@ -142,14 +156,14 @@ def unfollow(username):
         user = db.session.scalar(
             sa.select(User).where(User.username == username))
         if user is None:
-            flash(_('User %(username) not found.', username = username))
+            flash(_('User %(username)s not found.', username = username))
             return redirect(url_for('index'))
         if user == current_user:
             flash(_('You cannot unfollow yourself!!!'))
             return redirect(url_for('user', username=username))
         current_user.unfollow(user)
         db.session.commit()
-        flash(_('You are not following %(username).', username = username))
+        flash(_('You are not following %(username)s.', username = username))
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))

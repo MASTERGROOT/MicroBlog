@@ -3,7 +3,7 @@
 
 
 {% block content %}
-    <h1>{{ _('Hello, %(username)!', username=current_user.username) }}</h1>
+    <h1>{{ _('Hello, %(username)s!', username=current_user.username) }}</h1>
     {% if form %}
     {{ wtf.quick_form(form) }}
     {% endif %}
