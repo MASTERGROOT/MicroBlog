@@ -1,6 +1,7 @@
 ﻿import sqlalchemy as sa
 import sqlalchemy.orm as so
-from app import db, login, app
+from app import db, login
+from flask import current_app
 from typing import Optional
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -95,13 +96,13 @@ class User(db.Model, UserMixin):
         )
     def get_reset_password_token(self, expires_in=600):
         return jwt.encode(
-            {'reset_password': self.id, 'exp': time() + expires_in}, app.config['SECRET_KEY'], algorithm='HS256'
+            {'reset_password': self.id, 'exp': time() + expires_in}, current_app.config['SECRET_KEY'], algorithm='HS256'
         )
     
     @staticmethod
     def verify_reset_password_token(token):
         try:
-            id = jwt.decode(token, app.config['SECRET_KEY'],
+            id = jwt.decode(token, current_app.config['SECRET_KEY'],
                             algorithms=['HS256'])['reset_password']
         except:
             return
@@ -112,7 +113,7 @@ class User(db.Model, UserMixin):
 
 class Post(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    body: so.Mapped[str] = so.mapped_column(sa.String(140), index=True, unique=True)
+    body: so.Mapped[str] = so.mapped_column(sa.String(140), index=True)
     timestamp: so.Mapped[datetime] = so.mapped_column(index=True, default=lambda: datetime.now(timezone.utc))
     user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id), index=True)
     language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))

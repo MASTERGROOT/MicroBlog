@@ -13,19 +13,19 @@
     <body>
         <nav class="navbar navbar-expand-sm bg-body-tertiary bg-dark " data-bs-theme="dark">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{{ url_for('index') }}">{{ _('Microblog') }}</a>
+                <a class="navbar-brand" href="{{ url_for('main.index') }}">{{ _('Microblog') }}</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                     <div class="navbar-nav">
-                        <a class="nav-link active" aria-current="page" href="{{ url_for('index') }}">{{ _('Home') }}</a>
+                        <a class="nav-link active" aria-current="page" href="{{ url_for('main.index') }}">{{ _('Home') }}</a>
                         {% if current_user.is_anonymous %}
-                        <a class="nav-link" href="{{ url_for('login') }}">{{ _('Login') }}</a>
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">{{ _('Login') }}</a>
                         {% else %}
-                        <a class="nav-link" href="{{ url_for('user', username=current_user.username) }}">{{ _('Profile') }}</a>
-                        <a class="nav-link" href="{{ url_for('explore') }}">{{ _('Explore') }}</a>
-                        <a class="nav-link" href="{{ url_for('logout') }}">{{ _('Logout') }}</a>
+                        <a class="nav-link" href="{{ url_for('main.user', username=current_user.username) }}">{{ _('Profile') }}</a>
+                        <a class="nav-link" href="{{ url_for('main.explore') }}">{{ _('Explore') }}</a>
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">{{ _('Logout') }}</a>
                         {% endif %}
                     </div>
                 </div>
