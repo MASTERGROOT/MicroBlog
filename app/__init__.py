@@ -30,13 +30,13 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL'] if app.config['ELASTICSEARCH_URL'] else None])
     db.init_app(app)
     migrate.init_app(app, db)
     login.init_app(app)
     mail.init_app(app)
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
+    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) if app.config['ELASTICSEARCH_URL'] else None
 
     from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
